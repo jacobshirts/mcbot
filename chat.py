@@ -100,15 +100,22 @@ class ChatBot:
             # exit the game
             off(self.bot, 'chat', onChat)
 
-    def handleChat(self,sender, message, this, *rest):
-
+    def handleChat(self,sender, message, translate, json_msg, matches):
+        """
+        parameters:
+            sender - who said the message (compare with bot.username to ignore your own chat)
+            message - stripped of all color and control characters
+            translate - chat message type. Null for most bukkit chat messages
+            json_msg - unmodified JSON message from the server
+            matches - array of returned matches from regular expressions. May be null
+        """
         # check if order is incorrect to fix a bug we are seeing between Guido and Daniel
         if type(sender) != type(""):
             # reorder
             t = sender
             sender = message
-            message =  this
-            this = t
+            message = translate
+            translate = t
 
         message = message.strip()
 

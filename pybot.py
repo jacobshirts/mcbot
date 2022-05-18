@@ -5,6 +5,7 @@
 #  (c) 2021 by Guido Appenzeller & Daniel Appenzeller
 #
 
+import json
 import javascript
 from javascript import require, On, Once, AsyncTask, once, off
 import time
@@ -46,18 +47,20 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
 
         bot = mineflayer.createBot(
             {
-            'host'    : self.account['host'],
-            'username': self.account['user'],
-            'password': self.account['password'],
+           # 'host'    : self.account['host'],
+            'port'    : self.account['port'],
+            'username': "bub",
+           # 'password': self.account['password'],
             'version': self.account['version'],
             'hideErrors': False,
+            #'auth': 'microsoft',
             } )
 
         self.mcData   = require('minecraft-data')(bot.version)
         self.Block    = require('prismarine-block')(bot.version)
         self.Item     = require('prismarine-item')(bot.version)
         self.Vec3     = require('vec3').Vec3
-
+    
         # Setup for the pathfinder plugin
         pathfinder = require('mineflayer-pathfinder')
         bot.loadPlugin(pathfinder.pathfinder)
@@ -142,45 +145,53 @@ if __name__ == "__main__":
     argsd = vars(args)
 
     # Import credentials and server info, create the bot and log in
-    from account import account
+    import account.my_account as account
     if  argsd["nowindow"]:
-        pybot = PyBot(account.account)
+        pybot = PyBot(account.offline)
     else:
         from ui import PyBotWithUI
-        pybot = PyBotWithUI(account.account)
-    pybot.pdebug(f'Connected to server {account.account["host"]}.',0)
+        pybot = PyBotWithUI(account.offline)
+    #pybot.pdebug(f'Connected to server {account.account["host"]}.',0)
     if 'verbose' in argsd:
         pybot.debug_lvl = argsd['verbose']
+        try:
+            # Import list of known locations. Specific to the world.
+            if account.locations:
+                pybot.myLocations = account.locations
 
-    # Import list of known locations. Specific to the world.
-    if account.locations:
-        pybot.myLocations = account.locations
+            #
+            # Main Loop - We are driven by chat commands
+            #
 
-    #
-    # Main Loop - We are driven by chat commands
-    #
+            # Report status
+            # while not pybot.bot.health:
+            #     time.sleep(1)
+            
 
-    # Report status
-    while not pybot.bot.health:
-        time.sleep(1)
+            @On(pybot.bot, 'chat')
+            def onChat(sender, message, translate, json_msg, matches):
+                pybot.handleChat(sender, message, translate, json_msg, matches)
 
-    @On(pybot.bot, 'chat')
-    def onChat(sender, message, this, *rest):
-        pybot.handleChat(sender, message, this, *rest)
+            @On(pybot.bot, 'health')
+            def onHealth(arg):
+                pybot.healthCheck()
 
-    @On(pybot.bot, 'health')
-    def onHealth(arg):
-        pybot.healthCheck()
+            # @AsyncTask(start=True)
+            # def asyncInitialHeal(task):
+            #     pybot.healToFull()
 
-    @AsyncTask(start=True)
-    def asyncInitialHeal(task):
-        pybot.healToFull()
+            if pybot.debug_lvl >= 4:
+                pybot.printInventory()
+            pybot.pdebug(f'Ready.',0)
+            
+            # once(pybot.bot, 'login')
+            # print(f"{pybot.bot.player['username']}")
+            
+            # pybot.bot.chat('Bot '+pybot.bot.player['username']+' joined.')
+            
 
-    if pybot.debug_lvl >= 4:
-        pybot.printInventory()
-    pybot.pdebug(f'Ready.',0)
-
-    pybot.mainloop()
-    # The spawn event
-    #once(pybot.bot, 'login')
-    #pybot.bot.chat('Bot '+pybot.bot.callsign+' joined.')
+            pybot.mainloop()
+            # The spawn event
+        finally:
+            pybot.bot.end()  
+    

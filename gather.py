@@ -56,6 +56,10 @@ class BoundingBox:
     def dz(self):
         return self.z_max-self.z_min+1
 
+    def print_box(self):
+        print(f"x_max: {self.x_max} x_min: {self.x_min} dx: {self.dx()}")
+        print(f"y_max: {self.y_max} y_min: {self.y_min} dy: {self.dy()}")
+        print(f"z_max: {self.z_max} z_min: {self.z_min} dz: {self.dz()}")
 
 
 class GatherBot:
@@ -99,9 +103,9 @@ class GatherBot:
             return False
         self.pdebug(f'  found at {b0.position.x},{b0.position.z}',3)
         box = BoundingBox(self,b0)
-
+        #print(box.print_box()) 
         if box.dx() != 2 or box.dz() != 2 or box.dy() < 5:
-            self.perror(f'Tree has wrong dimensions {box.dx()} x {box.dy()} x {box.dz()}')
+            self.perror(f'Tree has wrong dimensions {box.dx()} x {box.dz()} x {box.dy()} \n Tree needs to be 2 x 2 and higher than 5')
             return False
         
         self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}'])
@@ -113,6 +117,7 @@ class GatherBot:
         y  = box.y_min
         z0 = box.z_min
 
+        # TODO: Make this better so you can chop different shapes of trees
         self.walkToBlock(x0-1, y, z0-1)
         self.chop(x0-1, y, z0-1, 3)
         self.walkToBlock(x0-1, y, z0-1)
