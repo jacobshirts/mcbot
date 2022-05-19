@@ -43,7 +43,10 @@ class Chest:
             if self.container:
                 return True
             #print(self.object)
-            self.container = self.pybot.bot.openContainer(self.object)
+            try:
+                self.container = self.pybot.bot.openContainer(self.object)
+            except:
+                self.container = None
             if not self.container:
                 self.pybot.perror("Can't open chest.")
                 return False
@@ -533,7 +536,7 @@ class InventoryManager:
         # If we have both cart and chest we deposit into cart
         # and then restock from chest
         cart = Chest(self,"Minecart with Chest",silent=True)
-        if cart.object:
+        if cart.container:
             cart.restock(itemList)
             cart.close()
             time.sleep(1)

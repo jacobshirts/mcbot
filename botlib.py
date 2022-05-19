@@ -154,12 +154,15 @@ def directionToVector(block):
 # Return a color based on current/max
 
 def colorHelper(x,max):
-    if x/max > 0.95:
-        return "white","green"
-    elif x/max > 0.75:
-        return "black","yellow"
-    elif x/max > 0.5:
-        return "black","orange"
+    if x:
+        if x/max > 0.95:
+            return "white","green"
+        elif x/max > 0.75:
+            return "black","yellow"
+        elif x/max > 0.5:
+            return "black","orange"
+        else:
+            return "white","red"
     else:
         return "white","red"
 

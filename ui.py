@@ -174,6 +174,9 @@ class PyBotWithUI(PyBot):
             tk.Label(self.invUI, text = f'    Inventory is Empty', width=27, anchor="w").pack(side=tk.TOP, anchor="w", padx=5)
 
     def uiStatus(self, health, food, oxygen):
+        if not health or not food or not oxygen:
+            return
+
         for widget in self.statusUI.winfo_children():
             widget.destroy()
 
@@ -223,30 +226,32 @@ class PyBotWithUI(PyBot):
         for x in range(0,13):
             for z in range(0,13):
                 v = Vec3(p.x+x-6,p.y+0.3,p.z+z-6)
-                n = self.bot.blockAt(v).displayName
-                blocks[x][z] = n
+                if self.bot.blockAt(v):
+                    n = self.bot.blockAt(v).displayName
+                    blocks[x][z] = n
 
         self.uiMap([blocks])
 
     def refreshWorldStatus(self):
+        if self.bot.time.timeOfDay:          
+            t = self.bot.time.timeOfDay
+            h = (int(t/1000)+6) % 24
+            m = int( 60*(t % 1000)/1000)
+            time_str = f'{h:02}:{m:02}'
+            p = self.bot.entity.position
+            pos_str = f'x: {int(p.x)}   y: {int(p.y)}   z: {int(p.z)}'
+            if self.bot.time.isDay:
+                self.timeLabel.configure(text=f'  Time: 🌞 {time_str}', background="light grey", foreground="black")
+            else:
+                self.timeLabel.configure(text=f'  Time: 🌙 {time_str}', background="dark blue", foreground="white")
 
-        t = self.bot.time.timeOfDay
-        h = (int(t/1000)+6) % 24
-        m = int( 60*(t % 1000)/1000)
-        time_str = f'{h:02}:{m:02}'
-        p = self.bot.entity.position
-        pos_str = f'x: {int(p.x)}   y: {int(p.y)}   z: {int(p.z)}'
-        if self.bot.time.isDay:
-            self.timeLabel.configure(text=f'  Time: 🌞 {time_str}', background="light grey", foreground="black")
-        else:
-            self.timeLabel.configure(text=f'  Time: 🌙 {time_str}', background="dark blue", foreground="white")
+            self.placeLabel.configure(text=f'  🧭  {pos_str}')
 
-        self.placeLabel.configure(text=f'  🧭  {pos_str}')
+            self.connLabel.configure(text=f'  🌐 {self.account["host"]}   {self.bot.player.ping} ms')
 
-        self.connLabel.configure(text=f'  🌐 {self.account["host"]}   {self.bot.player.ping} ms')
-
-        #tk.Label(self.equipUI, text = f'    Hand: {hand}').pack(side=tk.TOP, anchor="w", padx=5)
-
+            #tk.Label(self.equipUI, text = f'    Hand: {hand}').pack(side=tk.TOP, anchor="w", padx=5)
+       
+            
     def refreshInventory(self):
         inventory = self.bot.inventory.items()
         iList = {}

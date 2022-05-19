@@ -45,16 +45,25 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
 
         mineflayer = require('mineflayer')
 
-        bot = mineflayer.createBot(
-            {
-           # 'host'    : self.account['host'],
-            'port'    : self.account['port'],
-            'username': "bub",
-           # 'password': self.account['password'],
-            'version': self.account['version'],
-            'hideErrors': False,
-            #'auth': 'microsoft',
-            } )
+        if account['type'] == 'offline':
+            bot = mineflayer.createBot(
+                {
+                'port'    : self.account['port'],
+                'username': "bub",
+                'version': self.account['version'],
+                'hideErrors': False,
+                } )
+        elif account['type'] == 'online':
+            bot = mineflayer.createBot(
+                {
+                'host'    : self.account['host'],
+                'port'    : self.account['port'],
+                'username': "bub",
+                'password': self.account['password'],
+                'version': self.account['version'],
+                'hideErrors': False,
+                'auth': 'microsoft',
+                } )
 
         self.mcData   = require('minecraft-data')(bot.version)
         self.Block    = require('prismarine-block')(bot.version)
@@ -89,6 +98,15 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
     #   4=spam me!
     #   5=everything
 
+    def mainloop(self):
+        once(pybot.bot, 'login')
+        # print(f"{pybot.bot.player['username']}")
+            
+        # pybot.bot.chat('Bot '+pybot.bot.player['username']+' joined.')
+
+        while not pybot.bot.health:
+            time.sleep(1)
+
     def perror(self, message):
         print(f'*** error: {message}')
 
@@ -112,9 +130,6 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
             print(message,end=end)
 
     # Dummy functions, they get overriden by the GUI if we have it
-
-    def mainloop(self):
-        pass
 
     def refreshInventory(self):
         pass
@@ -140,18 +155,24 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog='python pybot.py')
     parser.add_argument('--nowindow', action='store_true', help='run in the background, i.e. without the Tk graphical UI')
+    parser.add_argument('--online', action='store_true', help='runs on a server')
     parser.add_argument('--verbose', '-v', action='count', default=0, help='verbosity from 1-5. Use as -v, -vv, -vvv etc.')
     args = parser.parse_args()
     argsd = vars(args)
 
     # Import credentials and server info, create the bot and log in
     import account.my_account as account
+    
+    account_type = account.online if argsd["online"] else account.offline
     if  argsd["nowindow"]:
-        pybot = PyBot(account.offline)
+        pybot = PyBot(account_type)
     else:
         from ui import PyBotWithUI
-        pybot = PyBotWithUI(account.offline)
-    #pybot.pdebug(f'Connected to server {account.account["host"]}.',0)
+        pybot = PyBotWithUI(account_type)
+    
+    if account_type ==account.online:
+        pybot.pdebug(f'Connected to server {account.account["host"]}.',0)
+    
     if 'verbose' in argsd:
         pybot.debug_lvl = argsd['verbose']
         try:
@@ -163,9 +184,7 @@ if __name__ == "__main__":
             # Main Loop - We are driven by chat commands
             #
 
-            # Report status
-            # while not pybot.bot.health:
-            #     time.sleep(1)
+            
             
 
             @On(pybot.bot, 'chat')
@@ -176,6 +195,7 @@ if __name__ == "__main__":
             def onHealth(arg):
                 pybot.healthCheck()
 
+# TODO make this work.
             # @AsyncTask(start=True)
             # def asyncInitialHeal(task):
             #     pybot.healToFull()
@@ -183,12 +203,6 @@ if __name__ == "__main__":
             if pybot.debug_lvl >= 4:
                 pybot.printInventory()
             pybot.pdebug(f'Ready.',0)
-            
-            # once(pybot.bot, 'login')
-            # print(f"{pybot.bot.player['username']}")
-            
-            # pybot.bot.chat('Bot '+pybot.bot.player['username']+' joined.')
-            
 
             pybot.mainloop()
             # The spawn event
